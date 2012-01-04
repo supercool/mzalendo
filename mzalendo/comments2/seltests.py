@@ -18,11 +18,10 @@ class CommentTestCase(MzalendoSeleniumTestCase):
 
         # Go to the test person
         self.open_url('/')
-        self.open_url('/person/joseph-bloggs')
+        self.open_url('/person/joseph-bloggs#comments')
 
         # Go to the comments, and then login to add one
-        driver.find_element_by_id("view_comments_link").click()
-        driver.find_element_by_link_text("login to add your own comment").click()
+        driver.find_element_by_link_text("add your own").click()
 
         self.login('superuser')
 
@@ -45,7 +44,7 @@ class CommentTestCase(MzalendoSeleniumTestCase):
         
         
 class TweetCommentTestCase(TwitterSeleniumTestCase):
-    
+
     fixtures = ['test_data']
 
     def test_posting_to_twitter(self):
@@ -62,7 +61,7 @@ class TweetCommentTestCase(TwitterSeleniumTestCase):
         comment = Comment(
             content_type = ContentType.objects.get_for_model(bloggs),
             object_id    = bloggs.id,
-            title        = 'test title' + random_string,
+            title        = 'test title ' + random_string,
             comment      = 'test comment',
             user         = superuser,
             # submit_date  = datetime.datetime.now(),        
@@ -73,8 +72,8 @@ class TweetCommentTestCase(TwitterSeleniumTestCase):
         self.open_url( comment.get_absolute_url() )
         
         # Tweet the comment - not sure that the selector is specific enough
-        driver.switch_to_frame(0)
-        driver.find_element_by_id("btn").click()
+        driver.switch_to_frame(1)
+        driver.find_element_by_css_selector("a.btn").click()
         
         # go through all the windows and stay with the twitter one
         for h in driver.window_handles:

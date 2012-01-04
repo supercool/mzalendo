@@ -11,7 +11,8 @@ set -e
     helpers        \
     images         \
     info           \
-    place_data     \
+    scorecards     \
+    search         \
     tasks          \
     user_profile   \
 

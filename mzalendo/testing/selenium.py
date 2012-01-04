@@ -5,6 +5,7 @@ from time import sleep
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.management import call_command 
 from django.core.urlresolvers import reverse
 from django.utils import unittest
 
@@ -21,6 +22,9 @@ class MzalendoSeleniumTestCase(SeleniumTestCase):
 
     def setUp(self):
         super(MzalendoSeleniumTestCase, self).setUp()
+
+        # run the collectstatic command - so that all the static files can be served.
+        call_command('collectstatic', interactive=False) 
 
         # don't wait too long for things
         self.driver.implicitly_wait(5)
@@ -61,10 +65,29 @@ class MzalendoSeleniumTestCase(SeleniumTestCase):
         self.assert_user_logged_in()
 
 
+    def login_to_admin(self, username, password='secret'):
+        """Login to the admin interface"""
+
+        self.driver.open_url("/admin/")
+        
+        self.driver.find_element_by_id("id_username").clear()
+        self.driver.find_element_by_id("id_username").send_keys(username)
+        self.driver.find_element_by_id("id_password").clear()
+        self.driver.find_element_by_id("id_password").send_keys(password)
+        self.driver.find_element_by_css_selector("input[type=\"submit\"]").click()
+
+
     def logout(self):
         self.driver.find_element_by_link_text("logout").click()
         self.assertTrue( '/accounts/logout/' in self.driver.current_url )
         self.assert_user_logged_out()
+        
+    def resize_to_mobile(self):
+        self.driver.set_window_size(400, 600)
+
+    def resize_to_desktop(self):
+        self.driver.set_window_size(800, 1000)
+    
 
 
 # gather the twitter details. Do this here so that the values can be used in the

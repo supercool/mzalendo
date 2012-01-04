@@ -11,6 +11,8 @@
 
         {% comment %}
 
+            FIXME - add this back once design is done
+
             The 'STATIC_GENERATION_NUMBER' is used to force the caches to fetch
             new content. To update manually change the value in settings.py.
 
@@ -21,17 +23,18 @@
         
         {% endcomment %}
 
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/basic.css" media="screen, handheld" />
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/mobile.css" media="only screen and (min-width: 320px) and (max-width: 640px)" />
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/desktop.css" media="only screen and (min-width: 640px)" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/basic.css?{{ settings.STATIC_GENERATION_NUMBER }}" media="screen, handheld" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/mobile.css?{{ settings.STATIC_GENERATION_NUMBER }}" media="only screen and (min-width: 320px) and (max-width: 640px)" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/desktop.css?{{ settings.STATIC_GENERATION_NUMBER }}" media="only screen and (min-width: 640px)" />
 
         <!--[if lt IE 9]>
-            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/desktop.css" />
+            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/desktop.css?{{ settings.STATIC_GENERATION_NUMBER }}" />
         <![endif]-->
 
         <script src="{{ STATIC_URL }}js/libs/modernizr-2.0.6.custom.js"></script>
         <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/favicon.png">
 
+        <link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" media="screen" rel="stylesheet" type="text/css" />
         
         {% block map_related_headers %}
         <script type="text/javascript">
@@ -50,20 +53,24 @@
                 <a href="{% url home %}" id="logo">Mzalendo</a>
                 <menu id="site-user-tools">
                     <ul>
-                    {% if request.user.is_authenticated  %}
-                            <li>{% firstof request.user.get_full_name request.user.username %} (<a href="{% url django.contrib.auth.views.logout %}">logout</a>)</li>
-                    {% else %}
-                        <li><a href="{% url django.contrib.auth.views.login %}?next={{request.path}}">login</a></li>
-                        {% if 'twitter' in settings.SOCIAL_AUTH_ENABLED_BACKENDS %}
-                            <li><a rel="nofollow" href="{% url socialauth_begin 'twitter' %}">twitter</a></li>
-                        {% endif %}
-                        {% if 'facebook' in settings.SOCIAL_AUTH_ENABLED_BACKENDS %}
-                            <li><a rel="nofollow" href="{% url socialauth_begin 'facebook' %}">facebook</a></li>
-                        {% endif %}
-                    {% endif %}
+                        <li>
+                            {% block menu_login_options %}
+                                {% if request.user.is_authenticated  %}
+                                    {% firstof request.user.get_full_name request.user.username %} (<a href="{% url django.contrib.auth.views.logout %}">logout</a>)
+                                {% else %}
+                                    <a href="{% url django.contrib.auth.views.login %}?next={% firstof post_login_url request.path %}">login</a>
+                                    {% if 'twitter' in settings.SOCIAL_AUTH_ENABLED_BACKENDS %}
+                                        <a rel="nofollow" href="{% url socialauth_begin 'twitter' %}?next={% firstof post_login_url request.path %}">twitter</a>
+                                    {% endif %}
+                                    {% if 'facebook' in settings.SOCIAL_AUTH_ENABLED_BACKENDS %}
+                                        <a rel="nofollow" href="{% url socialauth_begin 'facebook' %}?next={% firstof post_login_url request.path %}">fb</a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endblock %}
+                        </li>                 
                     </ul>
                 </menu>
-                <form action="{% url haystack_search %}" method="get" id="search">
+                <form action="{% url core_search %}" method="get" id="search">
                     <input id="main_search_box" type="text" name="q" placeholder="search&hellip;" />
                     <button type="submit">Submit</button>
                 </form>
@@ -73,18 +80,19 @@
         <div id="main-menu">
             <nav class="wrapper">
                 <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="#">Democracy Resources</a></li>
-                    <li><a href="#">Politicians</a></li>
-                    <li><a href="#">Parliament</a></li>
-                    <li><a href="#">Places</a></li>
+                    <li><a href="{% url home %}">Home</a></li>
+                    <li><a href="{% url info_page slug='how-democracy-works' %}">Democracy Resources</a></li>
+                    <li><a href="{% url person_list %}">Politicians</a></li>
+                    <li><a href="{% url hansard:index %}">Parliament</a></li>
+                    <li><a href="{% url place_list %}">Places</a></li>
                     <li><a href="#">2012</a></li>
                     <li><a href="#">Lest We Forget</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="#">About</a></li>
+                    <li><a href="http://www.mzalendo.com/">Blog</a></li>
+                    <li><a href="{% url info_page slug='about' %}">About</a></li>
                 </ul>
             </nav>
         </div>
+
 
         <div id="breadcrumb">
             <nav class="wrapper">
@@ -114,6 +122,7 @@
                 <ul class="utilities">
                     <li><a href="{% url privacy %}">privacy</a></li>
                     <li><a href="http://eepurl.com/gPMJL">Subscribe to our newsletter</a></li>
+                    <li><a href="{% url feedback_add %}?url={{ request.build_absolute_uri }}" class="feedback_link">Give us feedback</a></li>
                 </ul>
                 
                 <ul class="utilities">
@@ -137,10 +146,17 @@
              * Test for mobile / desktop and load appropriate libs/scripts
              */
             // this is not yet ideal... it reacts a bit slow if the cdn fails
+
+            var post_jquery_desktop_load = [
+                '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js',
+                '{{ STATIC_URL }}js/libs/jquery.form-v2.94.js', // TODO - only load when needed for feedback form
+                '{{ STATIC_URL }}js/desktop-functions.js?{{ settings.STATIC_GENERATION_NUMBER }}'
+            ];
+
             Modernizr.load([
                 {
                     test : Modernizr.mq('only screen and (min-width: 320px) and (max-width: 640px)'),
-                    yep : ['{{ STATIC_URL }}js/libs/zepto-0.8.min.js', '{{ STATIC_URL }}js/mobile-functions.js'],
+                    yep : ['{{ STATIC_URL }}js/libs/zepto-0.8.min.js', '{{ STATIC_URL }}js/mobile-functions.js?{{ settings.STATIC_GENERATION_NUMBER }}'],
                     nope : '//ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js',
                     complete: function () {
                         // only run this if mq failed - e.g. desktop or no mq support (IE)
@@ -154,14 +170,14 @@
                                         complete : function () {
                                             // once local has been fetched, check for jQuery object again and load static libs and functions if there
                                             if ( window.jQuery ) {
-                                                Modernizr.load(['{{ STATIC_URL }}js/libs/jquery.autocomplete.min.js', '{{ STATIC_URL }}js/desktop-functions.js']);
+                                                Modernizr.load( post_jquery_desktop_load );
                                             }
                                         }
                                     }
                                 ]);
                             }else{
                                 // if jQuery object is there, load in the rest of the static libs and functions
-                                Modernizr.load(['{{ STATIC_URL }}js/libs/jquery.autocomplete.min.js', '{{ STATIC_URL }}js/desktop-functions.js']);
+                                Modernizr.load( post_jquery_desktop_load );
                             }
                         }
                     }

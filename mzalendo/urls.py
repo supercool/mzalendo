@@ -33,7 +33,7 @@ urlpatterns += patterns('',
 
 # Hansard pages
 urlpatterns += patterns('',
-    (r'^hansard/', include('hansard.urls')),
+    (r'^hansard/', include('hansard.urls', namespace='hansard', app_name='hansard')),
 )
 
 # Project pages
@@ -62,6 +62,16 @@ if settings.SERVE_STATIC_FILES:
 # social auth
 urlpatterns += patterns('',
     url(r'^social/', include('social_auth.urls')),
+)
+
+# search
+urlpatterns += patterns('',
+    (r'^search/', include('search.urls')),
+)
+
+# search
+urlpatterns += patterns('',
+    (r'^feedback/', include('feedback.urls')),
 )
 
 # Everything else goes to core

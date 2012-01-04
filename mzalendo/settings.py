@@ -117,7 +117,7 @@ STATIC_URL = '/static/'
 
 # integer which when updated causes the caches to fetch new content. See note in
 # 'base.html' for a better alternative in Django 1.4
-STATIC_GENERATION_NUMBER = 4
+STATIC_GENERATION_NUMBER = 5
 
 # URL prefix for admin static files -- CSS, JavaScript and images.
 # Make sure to use a trailing slash.
@@ -146,7 +146,7 @@ SECRET_KEY = config.get('DJANGO_SECRET_KEY')
 
 # Always use the TemporaryFileUploadHandler as it allows us to access the
 # uploaded file on disk more easily. Currently used by the CSV upload in
-# place_data admin.
+# scorecards admin.
 FILE_UPLOAD_HANDLERS = (
     # "django.core.files.uploadhandler.MemoryFileUploadHandler",
     "django.core.files.uploadhandler.TemporaryFileUploadHandler",
@@ -223,10 +223,15 @@ INSTALLED_APPS = (
     'info',
     'tasks',
     'hansard',
+    'feedback',
     'projects',
-    'place_data',
+    'scorecards',
+    'search',
     'user_profile',
     'core',
+
+    'place_data', # TODO - remove entry and app once migrations have run on all servers
+    
 )
 
 # A sample logging configuration. The only tangible logging
